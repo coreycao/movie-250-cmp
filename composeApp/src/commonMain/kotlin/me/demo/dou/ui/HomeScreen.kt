@@ -1,0 +1,140 @@
+package me.demo.dou.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import me.demo.dou.data.Movie
+import movie250.composeapp.generated.resources.Res
+import movie250.composeapp.generated.resources.fetch_data_error
+import movie250.composeapp.generated.resources.no_data_available
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+
+/**
+ * @author Yeung
+ * @date 2025/8/1
+ */
+
+@Composable
+fun HomeScreen(modifier: Modifier = Modifier) {
+
+    LaunchedEffect(Unit) {
+
+    }
+
+    val homeViewModel = koinViewModel<HomeViewModel>()
+
+    val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
+
+    when (homeUiState) {
+        is UiState.Success -> {
+            val movieList = (homeUiState as UiState.Success).movies
+            MovieGridList(
+                modifier = modifier,
+                movieList = movieList
+            )
+        }
+
+        is UiState.Loading -> LoadingScreen()
+        is UiState.Error -> ErrorScreen(
+            errorMessage = (homeUiState as UiState.Error).message
+        )
+
+        is UiState.Empty -> EmptyScreen()
+
+    }
+}
+
+@Composable
+fun MovieGridList(
+    modifier: Modifier = Modifier,
+    movieList: List<Movie>,
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = modifier.fillMaxSize(),
+        contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
+    ) {
+        items(movieList, key = { it.id }) { movie ->
+            MovieCard(movie = movie)
+        }
+    }
+}
+
+@Composable
+fun MovieCard(
+    modifier: Modifier = Modifier,
+    movie: Movie,
+    onClick: () -> Unit = {}
+) {
+    Column(
+        modifier
+            .padding(8.dp)
+            .clickable { onClick() }
+    ) {
+        AsyncImage(
+            model = movie.pic,
+            contentDescription = movie.name,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .background(Color.LightGray),
+        )
+
+        Spacer(Modifier.height(2.dp))
+
+        Text(movie.name, style = MaterialTheme.typography.titleMedium)
+        Text(movie.score, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+
+@Composable
+fun LoadingScreen(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+@Composable
+fun EmptyScreen(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(stringResource(Res.string.no_data_available))
+    }
+}
+
+@Composable
+fun ErrorScreen(modifier: Modifier = Modifier, errorMessage: String? = null) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = errorMessage ?: stringResource(Res.string.fetch_data_error))
+    }
+}
