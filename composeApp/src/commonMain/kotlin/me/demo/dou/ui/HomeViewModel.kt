@@ -2,11 +2,15 @@ package me.demo.dou.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import me.demo.dou.data.Movie
 import me.demo.dou.data.MovieRepository
+import me.demo.dou.db.toModel
 
 /**
  * @author Yeung
@@ -14,20 +18,31 @@ import me.demo.dou.data.MovieRepository
  */
 class HomeViewModel(private val movieRepository: MovieRepository) : ViewModel() {
 
+    private val log = Logger.withTag("HomeViewModel")
+
+    init {
+        viewModelScope.launch {
+            log.d {
+                "Initializing HomeViewModel, refreshing movie list"
+            }
+            movieRepository.refresh()
+        }
+    }
+
     val homeUiState = movieRepository.observeMovieList()
-        .map { result ->
-            result.fold(
-                onSuccess = { movies ->
-                    if (movies.isEmpty()) {
-                        UiState.Empty
-                    } else {
-                        UiState.Success(movies)
-                    }
-                },
-                onFailure = { exception ->
-                    UiState.Error(exception.message)
+        .map { entities ->
+            val movies = entities.map { it.toModel() }
+            if (movies.isEmpty()) {
+                log.d {
+                    "Movie list is empty, showing empty state"
                 }
-            )
+                UiState.Empty
+            } else {
+                log.d {
+                    "Fetched ${movies.size} movies successfully"
+                }
+                UiState.Success(movies)
+            }
         }
         .stateIn(
             scope = viewModelScope,

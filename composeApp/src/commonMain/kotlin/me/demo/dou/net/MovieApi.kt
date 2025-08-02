@@ -1,5 +1,6 @@
 package me.demo.dou.net
 
+import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -16,8 +17,11 @@ import me.demo.dou.data.Movie
 
 class MovieApi(private val httpClient: HttpClient) {
 
+    private val log = Logger.withTag("MovieApi")
+
     companion object {
-        private const val END_POINT = "https://raw.githubusercontent.com/coreycao/douban-movie-250-diff/main/recently_movie_250.json"
+        private const val END_POINT =
+            "https://raw.githubusercontent.com/coreycao/douban-movie-250-diff/main/recently_movie_250.json"
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -27,7 +31,11 @@ class MovieApi(private val httpClient: HttpClient) {
             val json = Json {
                 allowTrailingComma = true
             }
-            json.decodeFromString(response.bodyAsText())
+            json.decodeFromString<List<Movie>>(response.bodyAsText())
+        }.onFailure {
+            log.e {
+                "Failed to fetch movie list: ${it.message}"
+            }
         })
     }
 }

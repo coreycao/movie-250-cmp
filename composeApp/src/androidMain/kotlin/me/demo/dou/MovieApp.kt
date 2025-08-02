@@ -1,7 +1,10 @@
 package me.demo.dou
 
 import android.app.Application
-import me.demo.dou.di.initKoin
+import me.demo.dou.di.commonModule
+import me.demo.dou.di.databaseModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.GlobalContext.startKoin
 
 /**
  * @author Yeung
@@ -10,7 +13,12 @@ import me.demo.dou.di.initKoin
 class MovieApp: Application(){
     override fun onCreate() {
         super.onCreate()
-        // Initialize Koin or any other dependency injection framework here
-         initKoin()
+        startKoin {
+            androidContext(this@MovieApp)
+            modules(
+                databaseModule,
+                commonModule
+            )
+        }
     }
 }

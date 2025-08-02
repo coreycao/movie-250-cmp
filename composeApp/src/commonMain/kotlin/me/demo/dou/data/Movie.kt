@@ -1,6 +1,7 @@
 package me.demo.dou.data
 
 import kotlinx.serialization.Serializable
+import me.demo.dou.db.MovieEntity
 
 /**
  * @author Yeung
@@ -16,14 +17,11 @@ data class Movie(
     val id: String
 )
 
-/**
- *
- * {
- *     "rank": "1",
- *     "pic": "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p480747492.jpg",
- *     "name": "肖申克的救赎",
- *     "link": "https://movie.douban.com/subject/1292052",
- *     "score": "9.7",
- *     "id": "1292052"
- *   }
- */
+fun Movie.toEntity(): MovieEntity = MovieEntity(
+    rank = this.rank,
+    pic = this.pic,
+    name = this.name,
+    link = this.link,
+    score = this.score,
+    movieId = this.id
+)

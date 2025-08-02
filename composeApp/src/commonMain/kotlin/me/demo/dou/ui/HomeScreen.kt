@@ -22,12 +22,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import co.touchlab.kermit.Logger
 import coil3.compose.AsyncImage
 import me.demo.dou.data.Movie
 import movie250.composeapp.generated.resources.Res
@@ -44,8 +46,10 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
 
-    LaunchedEffect(Unit) {
+    val log = remember { Logger.withTag("HomeScreen") }
 
+    LaunchedEffect(Unit) {
+        log.d { "HomeScreen launched" }
     }
 
     val homeViewModel = koinViewModel<HomeViewModel>()
@@ -61,13 +65,23 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             )
         }
 
-        is UiState.Loading -> LoadingScreen()
-        is UiState.Error -> ErrorScreen(
-            errorMessage = (homeUiState as UiState.Error).message
-        )
+        is UiState.Loading -> {
+            log.d{"Loading movies..."}
+            LoadingScreen(modifier = modifier)
+        }
 
-        is UiState.Empty -> EmptyScreen()
+        is UiState.Error -> {
+            log.e { "Error fetching movies: ${(homeUiState as UiState.Error).message}" }
+            ErrorScreen(
+                modifier = modifier,
+                errorMessage = (homeUiState as UiState.Error).message
+            )
+        }
 
+        is UiState.Empty -> {
+            log.d { "Movie list is empty, showing empty state" }
+            EmptyScreen(modifier = modifier)
+        }
     }
 }
 
@@ -128,13 +142,21 @@ fun LoadingScreen(modifier: Modifier = Modifier) {
 @Composable
 fun EmptyScreen(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(stringResource(Res.string.no_data_available))
+        Text(
+            stringResource(Res.string.no_data_available),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
 @Composable
 fun ErrorScreen(modifier: Modifier = Modifier, errorMessage: String? = null) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = errorMessage ?: stringResource(Res.string.fetch_data_error))
+        Text(
+            text = errorMessage ?: stringResource(Res.string.fetch_data_error),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.error
+        )
     }
 }
