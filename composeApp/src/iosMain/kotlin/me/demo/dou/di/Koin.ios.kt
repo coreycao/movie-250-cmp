@@ -10,9 +10,13 @@ import org.koin.dsl.module
  */
 
 actual fun platformModule(): Module {
-    return databaseModule
+    return module {
+        single { createDatabase() }
+    }
 }
 
-val databaseModule = module {
-    single { createDatabase() }
+fun initKoinIos() {
+    org.koin.core.context.startKoin {
+        modules(sharedModules())
+    }
 }

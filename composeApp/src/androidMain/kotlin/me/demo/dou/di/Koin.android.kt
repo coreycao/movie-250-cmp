@@ -2,7 +2,9 @@ package me.demo.dou.di
 
 import me.demo.dou.db.createDatabase
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 import org.koin.core.module.Module
+import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 
 /**
@@ -11,10 +13,13 @@ import org.koin.dsl.module
  */
 actual fun platformModule(): Module {
     return module {
-        // nothing for now
+        single { createDatabase(androidContext()) }
     }
 }
 
-val databaseModule = module {
-    single { createDatabase(androidContext()) }
+fun initKoinAndroid(koinAppDeclaration: KoinAppDeclaration) {
+    startKoin {
+        koinAppDeclaration()
+        modules(sharedModules())
+    }
 }

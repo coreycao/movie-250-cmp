@@ -1,6 +1,5 @@
 package me.demo.dou.di
 
-import co.touchlab.kermit.Logger
 import me.demo.dou.data.MovieRepository
 import me.demo.dou.db.AppDatabase
 import me.demo.dou.db.MovieDao
@@ -19,7 +18,12 @@ import org.koin.dsl.module
 
 expect fun platformModule(): Module
 
-val commonModule = module {
+fun sharedModules(): List<Module> = listOf(
+    commonModule(),
+    platformModule()
+)
+
+fun commonModule(): Module = module {
     single { sharedHttpClient }
     single { MovieApi(get()) }
 
@@ -32,17 +36,4 @@ val commonModule = module {
 
 private fun provideMovieDao(appDatabase: AppDatabase): MovieDao{
     return appDatabase.movieDao()
-}
-
-// just invoked on iOS
-fun initKoin() {
-    Logger.i {
-        "Initializing Koin"
-    }
-    startKoin {
-        modules(
-            platformModule(),
-            commonModule
-        )
-    }
 }
