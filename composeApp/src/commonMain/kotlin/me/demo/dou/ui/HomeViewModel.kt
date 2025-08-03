@@ -1,11 +1,17 @@
 package me.demo.dou.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import me.demo.dou.data.Movie
@@ -20,12 +26,52 @@ class HomeViewModel(private val movieRepository: MovieRepository) : ViewModel() 
 
     private val log = Logger.withTag("HomeViewModel")
 
+    private val _effect = MutableSharedFlow<Effect>()
+    val effect = _effect.asSharedFlow()
+
     init {
         viewModelScope.launch {
             log.d {
                 "Initializing HomeViewModel, refreshing movie list"
             }
-            movieRepository.refresh()
+            movieRepository.initMovieList()
+        }
+    }
+
+    var isRefreshing by mutableStateOf(false)
+        private set
+
+    var refreshJob: Job? = null
+
+    fun refresh() {
+        if (refreshJob?.isActive == true) {
+            log.d {
+                "Refresh job is already running, skipping new refresh"
+            }
+            return
+        }
+        refreshJob = viewModelScope.launch {
+            isRefreshing = true
+            movieRepository.fetchRemoteMovieList().first()
+                .fold(
+                    onSuccess = {
+                        isRefreshing = false
+                        log.d {
+                            "Successfully fetched movie list, updating UI"
+                        }
+                    }, onFailure = {
+                        isRefreshing = false
+                        log.e {
+                            "Failed to fetch movie list: ${it.message}"
+                        }
+                        _effect.emit(
+                            Effect.Toast(
+                                message = it.message ?: "Failed to fetch movie list"
+                            )
+                        )
+                    }
+                )
+
         }
     }
 

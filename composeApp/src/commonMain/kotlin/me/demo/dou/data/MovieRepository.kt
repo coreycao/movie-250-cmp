@@ -1,11 +1,8 @@
 package me.demo.dou.data
 
 import co.touchlab.kermit.Logger
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import me.demo.dou.db.MovieDao
 import me.demo.dou.net.MovieApi
 
@@ -17,32 +14,28 @@ class MovieRepository(private val movieApi: MovieApi, private val movieDao: Movi
 
     private val log = Logger.withTag("MovieRepo")
 
-    sealed class Event {
-        data class NetError(val error: Throwable) : Event()
-    }
+    fun observeMovieList() = movieDao.getAllAsFlow()
 
-    private val _event = MutableSharedFlow<Event>()
-    val state = _event.asSharedFlow()
+    fun fetchRemoteMovieList() = movieApi.fetchMovieList()
+        .onEach { result ->
+            result.fold(
+                onSuccess = { movies->
+                    log.d { "fetchRemoteMovieList success, save to db" }
+                    movieDao.replaceAll(movies.map { movie -> movie.toEntity() })
+                },
+                onFailure = { error ->
+                    log.d { "fetchRemoteMovieList failed" }
+                }
+            )
+        }
 
-    fun observeMovieList() = movieDao.getAllAsFlow().flowOn(Dispatchers.IO)
-
-    suspend fun refresh() {
+    suspend fun initMovieList() {
         val hasLocalCache = movieDao.isNotEmpty()
-        if (hasLocalCache){
-            log.d { "refresh, has local cache" }
-        } else{
-            movieApi.fetchMovieList().collect { result ->
-                result.fold(
-                    onSuccess = { movies ->
-                        log.d { "refresh success, save to db" }
-                        movieDao.replaceAll(movies.map { movie -> movie.toEntity() })
-                    },
-                    onFailure = {
-                        log.d { "refresh failed" }
-                        _event.emit(Event.NetError(it))
-                    }
-                )
-            }
+        if (hasLocalCache) {
+            log.d { "init movie list, has local cache" }
+        } else {
+            log.d { "init movie list, no local cache, fetching remote data" }
+            fetchRemoteMovieList().first()
         }
     }
 }

@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +45,7 @@ import org.koin.compose.viewmodel.koinViewModel
  * @date 2025/8/1
  */
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
 
@@ -59,14 +62,20 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     when (homeUiState) {
         is UiState.Success -> {
             val movieList = (homeUiState as UiState.Success).movies
-            MovieGridList(
-                modifier = modifier,
-                movieList = movieList
-            )
+            PullToRefreshBox(
+                modifier = modifier.fillMaxSize(),
+                isRefreshing = homeViewModel.isRefreshing,
+                onRefresh = homeViewModel::refresh
+            ) {
+                MovieGridList(
+                    modifier = Modifier.fillMaxSize(),
+                    movieList = movieList
+                )
+            }
         }
 
         is UiState.Loading -> {
-            log.d{"Loading movies..."}
+            log.d { "Loading movies..." }
             LoadingScreen(modifier = modifier)
         }
 
