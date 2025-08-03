@@ -40,8 +40,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import co.touchlab.kermit.Logger
 import coil3.compose.AsyncImage
 import me.demo.dou.data.Movie
+import me.demo.dou.net.NetworkStatus
 import movie250.composeapp.generated.resources.Res
 import movie250.composeapp.generated.resources.fetch_data_error
+import movie250.composeapp.generated.resources.network_offline
 import movie250.composeapp.generated.resources.no_data_available
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -62,6 +64,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     }
 
     val homeViewModel = koinViewModel<HomeViewModel>()
+
+    val netState = homeViewModel.netState.collectAsStateWithLifecycle()
 
     val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
 
@@ -114,6 +118,16 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                         modifier = Modifier.fillMaxSize(),
                         movieList = movieList
                     )
+
+                    if (netState.value == NetworkStatus.Disconnected) {
+                        log.d { "Network is offline" }
+                        TopToast(
+                            modifier = Modifier.background(Color.Red),
+                            message = stringResource(Res.string.network_offline)
+                        )
+                    } else {
+                        log.d { "Network is available" }
+                    }
                 }
             }
         }
@@ -135,6 +149,23 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             log.d { "Movie list is empty, showing empty state" }
             EmptyScreen(modifier = modifier)
         }
+    }
+}
+
+@Composable
+fun TopToast(
+    modifier: Modifier = Modifier,
+    message: String,
+) {
+    Box(
+        modifier = modifier.fillMaxWidth().padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 

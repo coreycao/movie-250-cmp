@@ -1,6 +1,8 @@
 package me.demo.dou.di
 
 import me.demo.dou.db.createDatabase
+import me.demo.dou.net.AndroidNetworkHelper
+import me.demo.dou.net.NetworkHelper
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -14,6 +16,7 @@ import org.koin.dsl.module
 actual fun platformModule(): Module {
     return module {
         single { createDatabase(androidContext()) }
+        single<NetworkHelper> { AndroidNetworkHelper(androidContext()) }
     }
 }
 

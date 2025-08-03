@@ -19,47 +19,63 @@ import me.demo.dou.data.Movie
 import me.demo.dou.data.MovieRepository
 import me.demo.dou.data.RepoEvent
 import me.demo.dou.db.toModel
+import me.demo.dou.net.NetStateMonitor
+import me.demo.dou.net.NetworkStatus
 
 /**
  * @author Yeung
  * @date 2025/8/1
  */
-class HomeViewModel(private val movieRepository: MovieRepository) : ViewModel() {
+class HomeViewModel(
+    private val movieRepository: MovieRepository,
+    private val netStateMonitor: NetStateMonitor
+) : ViewModel() {
 
     private val log = Logger.withTag("HomeViewModel")
 
     private val _effect = MutableSharedFlow<Effect>()
     val effect = _effect.asSharedFlow()
 
+    val netState = netStateMonitor.networkStatus
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = NetworkStatus.Connected
+        )
+
+    private suspend fun initData() {
+        movieRepository.initMovieList().collect {
+            when (it) {
+                is RepoEvent.Success -> {
+                    log.d {
+                        "Movie list initialized successfully with ${it.movies.size} movies"
+                    }
+                }
+
+                RepoEvent.None -> {
+                    log.d {
+                        "Movie list already has local cache, no need to fetch remote data"
+                    }
+                }
+
+                RepoEvent.NetError -> {
+                    log.e {
+                        "Failed to initialize movie list due to network error"
+                    }
+                    _effect.emit(
+                        Effect.Toast(message = "Failed to fetch movie list")
+                    )
+                }
+            }
+        }
+    }
+
     init {
         viewModelScope.launch {
             log.d {
                 "Initializing HomeViewModel, refreshing movie list"
             }
-            movieRepository.initMovieList().collect {
-                when (it) {
-                    is RepoEvent.Success -> {
-                        log.d {
-                            "Movie list initialized successfully with ${it.movies.size} movies"
-                        }
-                    }
-
-                    RepoEvent.None -> {
-                        log.d {
-                            "Movie list already has local cache, no need to fetch remote data"
-                        }
-                    }
-
-                    RepoEvent.NetError -> {
-                        log.e {
-                            "Failed to initialize movie list due to network error"
-                        }
-                        _effect.emit(
-                            Effect.Toast(message = "Failed to fetch movie list")
-                        )
-                    }
-                }
-            }
+            initData()
         }
     }
 

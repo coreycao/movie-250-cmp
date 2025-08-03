@@ -4,6 +4,7 @@ import me.demo.dou.data.MovieRepository
 import me.demo.dou.db.AppDatabase
 import me.demo.dou.db.MovieDao
 import me.demo.dou.net.MovieApi
+import me.demo.dou.net.NetStateMonitor
 import me.demo.dou.net.sharedHttpClient
 import me.demo.dou.ui.HomeViewModel
 import org.koin.core.context.startKoin
@@ -27,11 +28,13 @@ fun commonModule(): Module = module {
     single { sharedHttpClient }
     single { MovieApi(get()) }
 
-    viewModel { HomeViewModel(get()) }
+    viewModel { HomeViewModel(get(), get()) }
 
     single { MovieRepository(get(), get()) }
 
     single { provideMovieDao(get()) }
+
+    single { NetStateMonitor(get()) }
 }
 
 private fun provideMovieDao(appDatabase: AppDatabase): MovieDao{
