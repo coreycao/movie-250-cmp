@@ -9,7 +9,7 @@ import me.demo.dou.net.sharedHttpClient
 import me.demo.dou.ui.HomeViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
@@ -23,7 +23,7 @@ val commonModule = module {
     single { sharedHttpClient }
     single { MovieApi(get()) }
 
-    factoryOf(::HomeViewModel)
+    viewModel { HomeViewModel(get()) }
 
     single { MovieRepository(get(), get()) }
 
