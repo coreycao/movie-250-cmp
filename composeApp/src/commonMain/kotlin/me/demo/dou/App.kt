@@ -12,8 +12,6 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Preview
 fun App() {
     MaterialTheme {
-        Scaffold() {
-            HomeScreen(modifier = Modifier.fillMaxSize())
-        }
+        HomeScreen(modifier = Modifier.fillMaxSize())
     }
 }

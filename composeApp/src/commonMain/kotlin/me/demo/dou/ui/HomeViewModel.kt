@@ -1,5 +1,6 @@
 package me.demo.dou.ui
 
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -38,6 +39,14 @@ class HomeViewModel(private val movieRepository: MovieRepository) : ViewModel() 
         }
     }
 
+    val gridListState = LazyGridState()
+
+    fun scrollToTop() {
+        viewModelScope.launch {
+            gridListState.scrollToItem(index = 0)
+        }
+    }
+
     var isRefreshing by mutableStateOf(false)
         private set
 
@@ -65,9 +74,7 @@ class HomeViewModel(private val movieRepository: MovieRepository) : ViewModel() 
                             "Failed to fetch movie list: ${it.message}"
                         }
                         _effect.emit(
-                            Effect.Toast(
-                                message = it.message ?: "Failed to fetch movie list"
-                            )
+                            Effect.Toast(message = "Failed to fetch movie list")
                         )
                     }
                 )
