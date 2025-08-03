@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import me.demo.dou.data.Movie
 import me.demo.dou.data.MovieRepository
+import me.demo.dou.data.RepoEvent
 import me.demo.dou.db.toModel
 
 /**
@@ -35,7 +36,30 @@ class HomeViewModel(private val movieRepository: MovieRepository) : ViewModel() 
             log.d {
                 "Initializing HomeViewModel, refreshing movie list"
             }
-            movieRepository.initMovieList()
+            movieRepository.initMovieList().collect {
+                when (it) {
+                    is RepoEvent.Success -> {
+                        log.d {
+                            "Movie list initialized successfully with ${it.movies.size} movies"
+                        }
+                    }
+
+                    RepoEvent.None -> {
+                        log.d {
+                            "Movie list already has local cache, no need to fetch remote data"
+                        }
+                    }
+
+                    RepoEvent.NetError -> {
+                        log.e {
+                            "Failed to initialize movie list due to network error"
+                        }
+                        _effect.emit(
+                            Effect.Toast(message = "Failed to fetch movie list")
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -78,7 +102,6 @@ class HomeViewModel(private val movieRepository: MovieRepository) : ViewModel() 
                         )
                     }
                 )
-
         }
     }
 

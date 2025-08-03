@@ -2,6 +2,7 @@ package me.demo.dou.data
 
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import me.demo.dou.db.MovieDao
 import me.demo.dou.net.MovieApi
@@ -19,7 +20,7 @@ class MovieRepository(private val movieApi: MovieApi, private val movieDao: Movi
     fun fetchRemoteMovieList() = movieApi.fetchMovieList()
         .onEach { result ->
             result.fold(
-                onSuccess = { movies->
+                onSuccess = { movies ->
                     log.d { "fetchRemoteMovieList success, save to db" }
                     movieDao.replaceAll(movies.map { movie -> movie.toEntity() })
                 },
@@ -29,13 +30,28 @@ class MovieRepository(private val movieApi: MovieApi, private val movieDao: Movi
             )
         }
 
-    suspend fun initMovieList() {
+
+    fun initMovieList() = flow {
         val hasLocalCache = movieDao.isNotEmpty()
         if (hasLocalCache) {
             log.d { "init movie list, has local cache" }
+            emit(RepoEvent.None)
         } else {
             log.d { "init movie list, no local cache, fetching remote data" }
-            fetchRemoteMovieList().first()
+            fetchRemoteMovieList().first().fold(
+                onSuccess = {
+                    emit(RepoEvent.Success(it))
+                },
+                onFailure = {
+                    emit(RepoEvent.NetError)
+                }
+            )
         }
     }
+}
+
+sealed class RepoEvent {
+    data class Success(val movies: List<Movie>) : RepoEvent()
+    object None : RepoEvent()
+    object NetError : RepoEvent()
 }
