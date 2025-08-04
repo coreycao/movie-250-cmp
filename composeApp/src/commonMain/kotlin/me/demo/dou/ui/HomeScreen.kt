@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -45,6 +46,7 @@ import movie250.composeapp.generated.resources.Res
 import movie250.composeapp.generated.resources.fetch_data_error
 import movie250.composeapp.generated.resources.network_offline
 import movie250.composeapp.generated.resources.no_data_available
+import movie250.composeapp.generated.resources.retry
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -142,7 +144,9 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             ErrorScreen(
                 modifier = modifier,
                 errorMessage = (homeUiState as UiState.Error).message
-            )
+            ) {
+                homeViewModel.refresh()
+            }
         }
 
         is UiState.Empty -> {
@@ -237,12 +241,29 @@ fun EmptyScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ErrorScreen(modifier: Modifier = Modifier, errorMessage: String? = null) {
+fun ErrorScreen(modifier: Modifier = Modifier, errorMessage: String? = null, onClick: () -> Unit) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = errorMessage ?: stringResource(Res.string.fetch_data_error),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.error
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(onClick = {
+                onClick()
+            }, shape = MaterialTheme.shapes.extraLarge) {
+                Text(
+                    text = stringResource(Res.string.retry),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+
+                text = errorMessage ?: stringResource(Res.string.fetch_data_error),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
     }
 }
